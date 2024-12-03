@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 function SimulationData() {
   const [data, setData] = useState(null);
-  const cheapestHours = [22, 23, 2, 3]; // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
+  const [priceData, setPriceData] = useState([]);
+  const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
 
   const fetchData = () => {
     axios.get('http://127.0.0.1:5000/info')
@@ -14,6 +15,30 @@ function SimulationData() {
      });
   };
 
+  const fetchPricePerHour = () => {
+    axios.get('http://127.0.0.1:5000/priceperhour')
+      .then(response => {
+        setPriceData(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching price data', error);
+      });
+  };
+
+  // räknar den biligast timme från pris data
+  const calculateCheapestHours = (prices) => {
+    if (prices.length === 0) return;
+
+    const cheapest = prices
+      .map((price, index) => ({ hour: index, price }))
+      .sort((a, b) => a.price - b.price) // Sortea priset
+      .slice(0, 4) // hämtar 4 billigast pris
+      .map(item => item.hour);
+
+    setCheapestHours(cheapest);
+  };
+
+  
   const handleCharging = (startCharging) => {
     axios.post('http://127.0.0.1:5000/charge', {charging: startCharging ? 'on' : 'off'})
      .then(response => {
@@ -35,9 +60,13 @@ function SimulationData() {
       });
   };
 
+  useEffect(() => {
+    calculateCheapestHours(priceData);
+  }, [priceData]);
+
   // Automatisk, start/stop laddning  
   useEffect(() => {
-    if (data) {
+    if (data && cheapestHours.length > 0) {
       const currentHour = data.sim_time_hour;
       const maxChargeLevel = 0.8 * 46.3; // Laddar upp till max 80% av full kapacitet (37.04 kWh)
       
@@ -55,15 +84,19 @@ function SimulationData() {
         }
       }
     }
-  }, [data]);
+  }, [data, cheapestHours]);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 1000);
+    fetchPricePerHour();
+    const interval = setInterval(() => {
+      fetchData();
+      fetchPricePerHour();
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  if (!data) {
+  if (!data || cheapestHours.length === 0) {
     return <div>Loading</div>;
   }
 

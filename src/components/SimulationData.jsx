@@ -5,6 +5,7 @@ function SimulationData() {
   const [priceData, setPriceData] = useState([]);
   const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
   const [baseloadData, setBaseloadData] = useState([]);
+  const [optimalHours, setOptimalHours] = useState([]);
 
   const fetchData = () => {
     axios.get('http://127.0.0.1:5000/info')
@@ -27,7 +28,7 @@ function SimulationData() {
   };
 
   const fetchBaseload = () => {
-    axios.get('http://127.0.0.1:5000/Baseload')
+    axios.get('http://127.0.0.1:5000/baseload')
       .then(response => {
         setBaseloadData(response.data);
       })
@@ -36,17 +37,23 @@ function SimulationData() {
       });
   };
 
-  // räknar den biligast timme från pris data
-  const calculateCheapestHours = (prices) => {
-    if (prices.length === 0) return;
+  // Kombinera pris och baseload data för att få de mest optimala timmarna
+  const calculateOptimalHours = (prices, baseloads) => {
+    if (prices.length === 0 || baseloads.length === 0) return;
 
-    const cheapest = prices
-      .map((price, index) => ({ hour: index, price }))
-      .sort((a, b) => a.price - b.price) // Sortea priset
-      .slice(0, 4) // hämtar 4 billigast pris
+    const combinedData = prices.map((price, index) => {
+      return {
+        hour: index,
+        combinedValue: price + baseloads[index], // Kombinera pris och baseload för att få en total kostnad
+      };
+    });
+
+    const optimal = combinedData
+      .sort((a, b) => a.combinedValue - b.combinedValue) // Sortera baserat på den kombinerade kostnaden
+      .slice(0, 4) // Hämta de 4 mest optimala timmarna
       .map(item => item.hour);
 
-    setCheapestHours(cheapest);
+    setOptimalHours(optimal);
   };
 
   
@@ -72,20 +79,20 @@ function SimulationData() {
   };
 
   useEffect(() => {
-    calculateCheapestHours(priceData, baseloadData);
+    calculateOptimalHours(priceData, baseloadData);
   }, [priceData, baseloadData]);
 
   // Automatisk, start/stop laddning  
   useEffect(() => {
-    if (data && cheapestHours.length > 0) {
+    if (data && optimalHours.length > 0) {
       const currentHour = data.sim_time_hour;
       const maxChargeLevel = 0.8 * 46.3; // Laddar upp till max 80% av full kapacitet (37.04 kWh)
       
-      // kollar om den nuvarande timmen är en av dom billigare timmarna
-      const isInCheapestHours = cheapestHours.includes(currentHour);
+      // kollar om den nuvarande timmen är en av dom billigare timmarna och med läggst baseload
+      const isInOptimalHours = optimalHours.includes(currentHour);
 
       // kollar om den ska ladda eller inte ladda beronde på laddning nivån och om den är inom billigast timme.
-      if (data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours) {
+      if (data.battery_capacity_kWh < maxChargeLevel && isInOptimalHours) {
         if (!data.ev_battery_charge_start_stopp) {
           handleCharging(true); // Start laddning
         }
@@ -95,7 +102,7 @@ function SimulationData() {
         }
       }
     }
-  }, [data, cheapestHours]);
+  }, [data, optimalHours]);
 
   useEffect(() => {
     fetchData();
@@ -109,7 +116,7 @@ function SimulationData() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!data || cheapestHours.length === 0) {
+  if (!data || optimalHours.length === 0) {
     return <div>Loading</div>;
   }
 

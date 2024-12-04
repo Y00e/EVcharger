@@ -3,7 +3,6 @@ import axios from 'axios';
 function SimulationData() {
   const [data, setData] = useState(null);
   const [priceData, setPriceData] = useState([]);
-  const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
   const [baseloadData, setBaseloadData] = useState([]);
   const [optimalHours, setOptimalHours] = useState([]);
 

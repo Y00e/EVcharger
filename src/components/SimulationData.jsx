@@ -3,9 +3,9 @@ import axios from 'axios';
 function SimulationData() {
   const [data, setData] = useState(null);
   const [priceData, setPriceData] = useState([]);
-  const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
+  const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning 
   const [baseloadData, setBaseloadData] = useState([]);
-  const [lowestBaseloadHours, setLowestBaseloadHours] = useState([]);
+  const [baseloadHoursUnder11kWh, setBaseloadHoursUnder11kWh] = useState([]);// hushållets energiförbrykning inte överstiger 11 kWh
 
   const fetchData = () => {
     axios.get('http://127.0.0.1:5000/info')
@@ -50,16 +50,16 @@ function SimulationData() {
     setCheapestHours(cheapest);
   };
 
-  // Räknar de timmarna med lägst kWh data
-  const calculateLowestBaseloadHours = (baseloads) => {
+  // checkar så att inte baseload överstiger 11 kWh per hour
+  const getBaseloadHoursUnder11kWh = (baseloads) => {
     if (baseloads.length === 0) return;
   
-    const lowest = baseloads
+    const filteredBaseloads = baseloads
       .map((load, index) => ({ hour: index, load }))
-      .filter(item => item.load < 11) // Only consider hours with load under 11 kWh
-      .map(item => item.hour); // Map to just the hours
+      .filter(item => item.load < 11) // plockar ut dom värdena för load som är mindre än 11 kWh
+      .map(item => item.hour); // skapar ny array för load
   
-    setLowestBaseloadHours(lowest);
+      setBaseloadHoursUnder11kWh(filteredBaseloads);
   };
 
   
@@ -86,7 +86,7 @@ function SimulationData() {
 
   useEffect(() => {
     calculateCheapestHours(priceData, baseloadData);
-    calculateLowestBaseloadHours(baseloadData);
+    getBaseloadHoursUnder11kWh(baseloadData);
   }, [priceData, baseloadData]);
 
   // Automatisk, start/stop laddning  
@@ -97,7 +97,7 @@ function SimulationData() {
       
       // kollar om den nuvarande timmen är en av dom billigare timmarna och med läggst baseload
       const isInCheapestHours = cheapestHours.includes(currentHour);
-      const isInLowestBaseloadHours = lowestBaseloadHours.includes(currentHour);
+      const isInLowestBaseloadHours = baseloadHoursUnder11kWh.includes(currentHour);
 
       // kollar om den ska ladda eller inte ladda beronde på laddning nivån och om den är inom billigast timme.
       if (data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours && isInLowestBaseloadHours) {
@@ -110,7 +110,7 @@ function SimulationData() {
         }
       }
     }
-  }, [data, cheapestHours, lowestBaseloadHours]);
+  }, [data, cheapestHours, baseloadHoursUnder11kWh]);
 
   useEffect(() => {
     fetchData();
@@ -124,7 +124,7 @@ function SimulationData() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!data || cheapestHours.length === 0 || lowestBaseloadHours.length === 0) {
+  if (!data || cheapestHours.length === 0 || baseloadHoursUnder11kWh.length === 0) {
     return <div>Loading</div>;
   }
 

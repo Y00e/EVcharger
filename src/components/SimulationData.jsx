@@ -53,13 +53,12 @@ function SimulationData() {
   // Räknar de timmarna med lägst kWh data
   const calculateLowestBaseloadHours = (baseloads) => {
     if (baseloads.length === 0) return;
-
+  
     const lowest = baseloads
       .map((load, index) => ({ hour: index, load }))
-      .sort((a, b) => a.load - b.load) // Sortera baserat på förbrukningen
-      .slice(0, 4) // Hämta 4 timmar med lägst förbrukning
-      .map(item => item.hour);
-
+      .filter(item => item.load < 11) // Only consider hours with load under 11 kWh
+      .map(item => item.hour); // Map to just the hours
+  
     setLowestBaseloadHours(lowest);
   };
 

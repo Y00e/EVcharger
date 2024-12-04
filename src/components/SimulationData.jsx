@@ -4,6 +4,7 @@ function SimulationData() {
   const [data, setData] = useState(null);
   const [priceData, setPriceData] = useState([]);
   const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning och där hushållets energiförbrykning inte överstiger 11 kWh
+  const [baseloadData, setBaseloadData] = useState([]);
 
   const fetchData = () => {
     axios.get('http://127.0.0.1:5000/info')
@@ -19,6 +20,16 @@ function SimulationData() {
     axios.get('http://127.0.0.1:5000/priceperhour')
       .then(response => {
         setPriceData(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching price data', error);
+      });
+  };
+
+  const fetchBaseload = () => {
+    axios.get('http://127.0.0.1:5000/Baseload')
+      .then(response => {
+        setBaseloadData(response.data);
       })
       .catch(error => {
         console.error('Error fetching price data', error);
@@ -61,8 +72,8 @@ function SimulationData() {
   };
 
   useEffect(() => {
-    calculateCheapestHours(priceData);
-  }, [priceData]);
+    calculateCheapestHours(priceData, baseloadData);
+  }, [priceData, baseloadData]);
 
   // Automatisk, start/stop laddning  
   useEffect(() => {
@@ -89,9 +100,11 @@ function SimulationData() {
   useEffect(() => {
     fetchData();
     fetchPricePerHour();
+    fetchBaseload();
     const interval = setInterval(() => {
       fetchData();
       fetchPricePerHour();
+      fetchBaseload();
     }, 1000);
     return () => clearInterval(interval);
   }, []);

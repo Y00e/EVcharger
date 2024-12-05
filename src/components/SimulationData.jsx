@@ -3,7 +3,7 @@ import axios from 'axios';
 function SimulationData() {
   const [data, setData] = useState(null);
   const [priceData, setPriceData] = useState([]);
-  const [cheapestHours, setCheapestHours] = useState([]); // billigast timmar för laddning 
+  const [cheapestHours, setCheapestHours] = useState([]); // läsar aktuella värdet och uppdatera, billigast timmar för laddning 
   const [baseloadData, setBaseloadData] = useState([]);
   const [baseloadHoursUnder11kWh, setBaseloadHoursUnder11kWh] = useState([]);// hushållets energiförbrykning inte överstiger 11 kWh
 
@@ -37,7 +37,7 @@ function SimulationData() {
       });
   };
 
-  // räknar den biligast timme från pris data
+  // sorterar och skapar en arraay med dom 4 billigast timmarna från pris data
   const calculateCheapestHours = (prices) => {
     if (prices.length === 0) return;
 
@@ -50,7 +50,7 @@ function SimulationData() {
     setCheapestHours(cheapest);
   };
 
-  // checkar så att inte baseload överstiger 11 kWh per hour
+  // hämtar baseload hours som är under 3.5 kWh
   const getBaseloadHoursUnder11kWh = (baseloads) => {
     if (baseloads.length === 0) return;
   

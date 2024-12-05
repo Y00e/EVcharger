@@ -56,7 +56,7 @@ function SimulationData() {
   
     const filteredBaseloads = baseloads
       .map((load, index) => ({ hour: index, load }))
-      .filter(item => item.load < 11) // plockar ut dom värdena för load som är mindre än 11 kWh
+      .filter(item => item.load < 3.5) // plockar ut dom värdena för load som är mindre än 11 kWh
       .map(item => item.hour); // skapar ny array för load
   
       setBaseloadHoursUnder11kWh(filteredBaseloads);
@@ -97,10 +97,10 @@ function SimulationData() {
       
       // kollar om den nuvarande timmen är en av dom billigare timmarna och med läggst baseload
       const isInCheapestHours = cheapestHours.includes(currentHour);
-      const isInLowestBaseloadHours = baseloadHoursUnder11kWh.includes(currentHour);
+      const isUnder11kWh = baseloadHoursUnder11kWh.includes(currentHour);
 
       // kollar om den ska ladda eller inte ladda beronde på laddning nivån och om den är inom billigast timme.
-      if (data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours && isInLowestBaseloadHours) {
+      if (data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours && isUnder11kWh) {
         if (!data.ev_battery_charge_start_stopp) {
           handleCharging(true); // Start laddning
         }

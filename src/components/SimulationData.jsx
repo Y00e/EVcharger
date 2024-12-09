@@ -168,8 +168,8 @@ function SimulationData() {
           <button onClick={handleReset}>Reset</button>
         </div>
         <div>
-          <button></button>
-          <button></button>
+          <button onClick={() => handlChargingModeChange('price')}>Charge in lowest price</button>
+          <button onClick={() => handleCharging('baseload')}>Charge in lowest baseload</button>
         </div>
     </div>
   );

@@ -64,7 +64,7 @@ function SimulationData() {
       setBaseloadHoursUnder11kWh(filteredBaseloads);
   };
 
-  // sorterar och skapar en arraay med dom 4 billigast timmarna från pris data
+  // sorterar och skapar en arraay med dom 4 läggsta baseload timmarna
   const calculateLowestBaseloadHours = (baseloads) => {
     if (baseloads.length === 0) return;
 

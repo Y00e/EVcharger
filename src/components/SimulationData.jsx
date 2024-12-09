@@ -6,6 +6,8 @@ function SimulationData() {
   const [cheapestHours, setCheapestHours] = useState([]); // läsar aktuella värdet och uppdatera, billigast timmar för laddning 
   const [baseloadData, setBaseloadData] = useState([]);
   const [baseloadHoursUnder11kWh, setBaseloadHoursUnder11kWh] = useState([]);// hushållets energiförbrykning inte överstiger 11 kWh
+  const [lowestBaseloadHours, setLowestBaseloadHours] = useState([]);
+  const [chargingMode, setChargingMode] = useState('price');
 
   const fetchData = () => {
     axios.get('http://127.0.0.1:5000/info')
@@ -60,6 +62,19 @@ function SimulationData() {
       .map(item => item.hour); // skapar ny array för load
   
       setBaseloadHoursUnder11kWh(filteredBaseloads);
+  };
+
+  // sorterar och skapar en arraay med dom 4 billigast timmarna från pris data
+  const calculateLowestBaseloadHours = (baseloads) => {
+    if (baseloads.length === 0) return;
+
+    const lowest = baseloads
+      .map((load, index) => ({ hour: index, load }))
+      .sort((a, b) => a.load - b.load) // Sorterar baseload 
+      .slice(0, 4) // hämtar dom 4 timmar med läggst energi förbrukning
+      .map(item => item.hour);
+
+    setLowestBaseloadHours(lowest);
   };
 
   

@@ -145,7 +145,7 @@ function SimulationData() {
       fetchData();
       fetchPricePerHour();
       fetchBaseload();
-    }, 1000);
+    }, 500);
     return () => clearInterval(interval);
   }, []);
 

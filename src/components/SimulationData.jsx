@@ -168,8 +168,24 @@ function SimulationData() {
           <button onClick={handleReset}>Reset</button>
         </div>
         <div>
-          <button onClick={() => handlChargingModeChange('price')}>Charge in lowest price</button>
-          <button onClick={() => handleCharging('baseload')}>Charge in lowest baseload</button>
+          <button onClick={() => handleChargingMode('price')}>Charge in lowest price</button>
+          <button onClick={() => handleChargingMode('baseload')}>Charge in lowest baseload</button>
+        </div>
+        <div>
+          <h2>Lowest baseload hours</h2>
+        <ul>
+          {lowestBaseloadHours.map(hour => (
+            <li key={hour}>Hour: {hour}</li>
+          ))}
+        </ul>
+        <div>
+        <h2>Lowest price hours:</h2>
+        <ul>
+          {cheapestHours.map(hour => (
+            <li key={hour}>Hour: {hour}</li>
+          ))}
+        </ul>
+      </div>
         </div>
     </div>
   );

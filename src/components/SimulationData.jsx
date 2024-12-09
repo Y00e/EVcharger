@@ -99,33 +99,43 @@ function SimulationData() {
       });
   };
 
+  const handleChargingMode = (mode) => {
+    setChargingMode(mode);
+  };
+  
   useEffect(() => {
     calculateCheapestHours(priceData, baseloadData);
     getBaseloadHoursUnder11kWh(baseloadData);
+    calculateLowestBaseloadHours(baseloadData);
   }, [priceData, baseloadData]);
 
   // Automatisk, start/stop laddning  
   useEffect(() => {
-    if (data && cheapestHours.length > 0 ) {
+    if (data) {
       const currentHour = data.sim_time_hour;
       const maxChargeLevel = 0.8 * 46.3; // Laddar upp till max 80% av full kapacitet (37.04 kWh)
       
       // kollar om den nuvarande timmen är en av dom billigare timmarna och med läggst baseload
       const isInCheapestHours = cheapestHours.includes(currentHour);
       const isUnder11kWh = baseloadHoursUnder11kWh.includes(currentHour);
+      const isInLowestBaseloadHours = lowestBaseloadHours.includes(currentHour);
 
       // kollar om den ska ladda eller inte ladda beronde på laddning nivån och om den är inom billigast timme.
-      if (data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours && isUnder11kWh) {
+      if (chargingMode === 'price' && data.battery_capacity_kWh < maxChargeLevel && isInCheapestHours && isUnder11kWh) {
         if (!data.ev_battery_charge_start_stopp) {
           handleCharging(true); // Start laddning
         }
+      } else if (chargingMode === 'baseload' && data.battery_capacity_kWh < maxChargeLevel && isInLowestBaseloadHours) {
+        if (!data.ev_battery_charge_start_stopp) {
+          handleCharging(true); // Stop laddning
+        }
       } else {
         if (data.ev_battery_charge_start_stopp) {
-          handleCharging(false); // Stop laddning
+          handleCharging(false);
         }
       }
     }
-  }, [data, cheapestHours, baseloadHoursUnder11kWh]);
+  }, [data, cheapestHours, baseloadHoursUnder11kWh, lowestBaseloadHours, chargingMode]);
 
   useEffect(() => {
     fetchData();
@@ -139,7 +149,8 @@ function SimulationData() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!data || cheapestHours.length === 0 || baseloadHoursUnder11kWh.length === 0) {
+  if (!data || cheapestHours.length === 0 || baseloadHoursUnder11kWh.length === 0||
+    lowestBaseloadHours.length === 0) {
     return <div>Loading</div>;
   }
 
@@ -155,6 +166,10 @@ function SimulationData() {
         <p>EV Battery Charge: {data.ev_battery_charge_start_stopp ? 'on' : 'off'}</p>
         <div>
           <button onClick={handleReset}>Reset</button>
+        </div>
+        <div>
+          <button></button>
+          <button></button>
         </div>
     </div>
   );
